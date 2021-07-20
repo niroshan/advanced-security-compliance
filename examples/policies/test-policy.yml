@@ -1,0 +1,13 @@
+codescanning:
+  level: error
+ 
+dependabot:
+  level: high
+
+licensing:
+  conditions:
+    ids:
+      - MIT
+
+secretscanning:
+  level: all
