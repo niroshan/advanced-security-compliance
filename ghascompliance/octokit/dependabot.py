@@ -6,7 +6,7 @@ from ghascompliance.octokit.octokit import GitHub, OctoRequests, Octokit
 GRAPHQL_GET_INFO = """\
 {
     repository(owner: "$owner", name: "$repo") {
-        vulnerabilityAlerts(first: 100) {
+        vulnerabilityAlerts(first: 100, states: [OPEN]) {
             nodes {
                 createdAt
                 dismissReason
@@ -77,30 +77,32 @@ GRAPHQL_DEPENDENCY_INFO = """\
 
 class Dependencies(OctoRequests):
     def __init__(self, github: GitHub):
-        instance = "https://api.github.com/graphql"
         super().__init__(github=github)
-
+        # Update the headers for
         self.headers["Accept"] = "application/vnd.github.hawkgirl-preview+json"
 
         self.dependencies = []
 
     @staticmethod
     def createDependencyName(manager: str, dependency: str, version: str = None):
+        """Create a dependency full name"""
         ret = manager.lower() + "://" + dependency.lower()
         if version:
             ret += "#" + version.lower()
         return ret
 
     def getOpenAlerts(self, response: dict = {}):
+        """Get Open Security Dependencies Alerts"""
 
         variables = {"owner": self.github.owner, "repo": self.github.repo}
 
         query = Template(GRAPHQL_GET_INFO).substitute(**variables)
 
         request = requests.post(
-            "https://api.github.com/graphql",
+            self.github.get("api.graphql"),
             json={"query": query},
             headers=self.headers,
+            timeout=30,
         )
 
         if request.status_code != 200:
@@ -132,15 +134,17 @@ class Dependencies(OctoRequests):
         return data
 
     def getDependencies(self, response: dict = {}):
+        """Get Open Dependencies"""
 
         variables = {"owner": self.github.owner, "repo": self.github.repo}
 
         query = Template(GRAPHQL_DEPENDENCY_INFO).substitute(**variables)
 
         request = requests.post(
-            "https://api.github.com/graphql",
+            self.github.get("api.graphql"),
             json={"query": query},
             headers=self.headers,
+            timeout=30,
         )
 
         if request.status_code != 200:
